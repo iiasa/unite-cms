@@ -1,15 +1,12 @@
 version: '3.6'
 
 volumes:
-  mysql_data:
-  minio_data:
-  # only needed for osX NFS share
-  nfsmount:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3
-      device: ":${PWD}/"
+  unite-cms:
+    external: true
+  unite-mysql:
+    external: true
+  unite-minio:
+    external: true
 
 services:
 
@@ -21,14 +18,14 @@ services:
     - MYSQL_USER=${DATABASE_USER}
     - MYSQL_PASSWORD=${DATABASE_PASSWORD}
     - MYSQL_DATABASE=${DATABASE_NAME}
-    - MYSQL_ROOT_PASSWORD=root123456
+    - MYSQL_ROOT_PASSWORD=fnSmWfFKu4aS5Sap7ydhsEW4TwaqpB
     ports:
     - "3307:3306"
     volumes:
-    - mysql_data:/var/lib/mysql
+    - unite-mysql:/var/lib/mysql
 
   unitecms-web:
-    image: unitecms/docker-unite
+    image: iiasa.azurecr.io/unitecmsdocker
     build: ./.docker/unite-cms
     container_name: unitecms-web
     working_dir: /app/unite-cms
@@ -49,34 +46,19 @@ services:
     - MAILER_SENDER=${MAILER_SENDER}
     - MAILER_URL=${MAILER_URL}
     volumes:
-    # osX NFS share
-    - "nfsmount:/app/unite-cms"
-
-    # mount on a general linux
-    #- "./:/app/unite-cms"
-
-    #- ./.docker/unite-cms/root/etc/nginx/conf.d/app.conf:/etc/nginx/conf.d/app.conf
-    #- ./.docker/unite-cms/root/etc/php-fpm.d/www.conf:/etc/php-fpm.d/www.conf
-    #- ./var/log/php:/var/log/php
-    #- ./var/log/nginx:/var/log/nginx
+    - "/Users/karner/Documents/Projects/sandbox/unite-cms:/app/unite-cms"
     ports:
-    - "8080:8080"
+    - "8082:8080"
 
-  #minio:
-  #  image: minio/minio
-  #  container_name: minio
-  #  restart: always
-  #  ports:
-  #  - "9000:9000"
-  #  volumes:
-  #  - minio_data:/data
-  #  environment:
-  #  - "MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}"
-  #  - "MINIO_SECRET_KEY=${MINIO_SECRET_KEY}"
-  #  command: server /data
-
-  #mailcatcher:
-  #  image: yappabe/mailcatcher
-  #  ports:
-  #  - 1025:1025
-  #  - 1080:1080
+  unitecms-minio:
+    image: minio/minio
+    container_name: unitecms-minio
+    restart: always
+    ports:
+    - "9009:9000"
+    volumes:
+    - unite-minio:/data
+    environment:
+    - "MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}"
+    - "MINIO_SECRET_KEY=${MINIO_SECRET_KEY}"
+    command: server /data
